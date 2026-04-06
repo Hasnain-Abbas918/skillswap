@@ -1,18 +1,18 @@
 import axios from 'axios';
-
-// ✅ FIX: Vite proxy ki wajah se sirf /api use karo (no full URL)
+ 
+// ✅ Local pe Vite proxy use hoga, production pe Render URL
 const api = axios.create({
-  baseURL: '/api',   // Proxy handle karega localhost:5000 forward
+  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
-
+ 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('ss_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
-
+ 
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -25,5 +25,5 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
-
+ 
 export default api;
