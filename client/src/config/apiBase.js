@@ -4,7 +4,10 @@
  */
 export function getApiBaseUrl() {
   const v = import.meta.env.VITE_API_URL;
-  if (typeof v === 'string' && v.trim()) return v.trim().replace(/\/$/, '');
+  if (typeof v === 'string' && v.trim()) {
+    const raw = v.trim().replace(/\/$/, '');
+    return raw.endsWith('/api') ? raw : `${raw}/api`;
+  }
   if (import.meta.env.DEV) return 'http://localhost:5000/api';
   return '';
 }

@@ -160,7 +160,11 @@ const RegisterPage = () => {
                   toast.error('Server URL missing: set VITE_API_URL in Vercel and redeploy.');
                   return;
                 }
-                window.location.assign(`${base}/auth/google?origin=${encodeURIComponent(window.location.origin)}`);
+                const href = `${base}/auth/google?origin=${encodeURIComponent(window.location.origin)}`;
+                // #region agent log
+                fetch('http://127.0.0.1:7691/ingest/1db2acd4-589a-4ab9-8b52-f1edfd7f15d7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d03500'},body:JSON.stringify({sessionId:'d03500',location:'RegisterPage.jsx:googleBtn',message:'computed google href',data:{basePrefix:base.slice(0,96),hrefPrefix:href.slice(0,140)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+                // #endregion
+                window.location.assign(href);
               }}
               className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-2xl py-3 px-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 mb-5 font-semibold text-gray-700 text-sm"
             >

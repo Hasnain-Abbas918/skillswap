@@ -40,6 +40,9 @@ const LoginPage = () => {
       return;
     }
     const href = `${base}/auth/google?origin=${encodeURIComponent(window.location.origin)}`;
+    // #region agent log
+    fetch('http://127.0.0.1:7691/ingest/1db2acd4-589a-4ab9-8b52-f1edfd7f15d7',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d03500'},body:JSON.stringify({sessionId:'d03500',location:'LoginPage.jsx:handleGoogleLogin',message:'computed google href',data:{basePrefix:base.slice(0,96),hrefPrefix:href.slice(0,140)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+    // #endregion
     window.location.assign(href);
   };
 
