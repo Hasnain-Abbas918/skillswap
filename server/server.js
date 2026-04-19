@@ -10,6 +10,7 @@ const { connectDB } = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const socketHandler = require('./socket/socketHandler');
 const path = require('path');
+const { corsOriginValidator } = require('./utils/oauthClientUrl');
 
 dotenv.config();
 connectDB();
@@ -18,13 +19,13 @@ const app = express();
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
-  cors: { origin: process.env.CLIENT_URL, methods: ['GET', 'POST'], credentials: true },
+  cors: { origin: corsOriginValidator, methods: ['GET', 'POST'], credentials: true },
 });
 
 // Attach io to every request
 app.use((req, res, next) => { req.io = io; next(); });
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({ origin: corsOriginValidator, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

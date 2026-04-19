@@ -4,6 +4,7 @@ import { login } from '../store/slices/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowRight, Zap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { getApiBaseUrl } from '../config/apiBase';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -33,7 +34,13 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    const base = getApiBaseUrl();
+    if (!base) {
+      toast.error('Server URL missing: set VITE_API_URL in Vercel and redeploy.');
+      return;
+    }
+    const href = `${base}/auth/google?origin=${encodeURIComponent(window.location.origin)}`;
+    window.location.assign(href);
   };
 
   return (

@@ -4,6 +4,7 @@ import { register } from '../store/slices/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowRight, Zap, Mail, Lock, User, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { getApiBaseUrl } from '../config/apiBase';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 48 48">
@@ -153,7 +154,14 @@ const RegisterPage = () => {
             {/* Google */}
             <button
               type="button"
-              onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+              onClick={() => {
+                const base = getApiBaseUrl();
+                if (!base) {
+                  toast.error('Server URL missing: set VITE_API_URL in Vercel and redeploy.');
+                  return;
+                }
+                window.location.assign(`${base}/auth/google?origin=${encodeURIComponent(window.location.origin)}`);
+              }}
               className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-2xl py-3 px-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 mb-5 font-semibold text-gray-700 text-sm"
             >
               <GoogleIcon />
