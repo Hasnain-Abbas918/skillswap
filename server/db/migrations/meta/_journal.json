@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1775147027375,
-      "tag": "0000_friendly_wolf_cub",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1775161409840,
-      "tag": "0001_steady_hobgoblin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1775205933266,
-      "tag": "0002_shiny_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1775206782905,
-      "tag": "0003_moaning_nemesis",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1775328238172,
-      "tag": "0004_puzzling_shriek",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1775328873844,
-      "tag": "0005_many_mystique",
+      "when": 1775648718892,
+      "tag": "0000_amused_stardust",
       "breakpoints": true
     }
   ]

@@ -1,3 +1,4 @@
+
 const { defineConfig } = require('drizzle-kit');
 require('dotenv').config();
 

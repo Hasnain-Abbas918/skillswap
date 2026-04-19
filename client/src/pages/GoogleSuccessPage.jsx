@@ -15,9 +15,10 @@ const GoogleSuccessPage = () => {
 
     if (token) {
       localStorage.setItem('ss_token', token);
-      dispatch(fetchMe());
-      toast.success(`Welcome, ${name || 'back'}! 🎉`);
-      navigate('/dashboard', { replace: true });
+      dispatch(fetchMe()).then(() => {
+        toast.success(`Welcome, ${name || 'back'}! 🎉`);
+        navigate('/dashboard', { replace: true });
+      });
     } else {
       toast.error('Google login failed');
       navigate('/login', { replace: true });

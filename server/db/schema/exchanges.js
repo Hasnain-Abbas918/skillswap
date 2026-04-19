@@ -1,3 +1,4 @@
+
 const { pgTable, uuid, text, timestamp, pgEnum } = require('drizzle-orm/pg-core');
 const { users } = require('./users');
 const { bids } = require('./bids');

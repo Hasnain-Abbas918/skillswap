@@ -6,13 +6,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
- 
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate         = useNavigate();
   const location         = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
- 
+
   useEffect(() => {
     if (!user) return;
     const fetchPending = async () => {
@@ -25,7 +25,7 @@ const Navbar = () => {
     const interval = setInterval(fetchPending, 30000);
     return () => clearInterval(interval);
   }, [user, location.pathname]);
- 
+
   const navLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/bids',      icon: BookOpen,        label: 'Bids'      },
@@ -33,13 +33,13 @@ const Navbar = () => {
     { to: '/requests',  icon: Inbox,           label: 'Requests', badge: pendingCount },
     { to: '/chat',      icon: MessageSquare,   label: 'Chat'      },
     { to: '/history',   icon: Clock,           label: 'History'   },
-    { to: '/reports',   icon: Flag,            label: 'Reports'   }, // ✅ NEW
+    { to: '/reports',   icon: Flag,            label: 'Reports'   },
     { to: '/profile',   icon: User,            label: 'Profile'   },
   ];
- 
+
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
- 
+
   return (
     <>
       <style>{`
@@ -107,11 +107,11 @@ const Navbar = () => {
         .avatar-ring { transition: box-shadow 0.2s ease; }
         .avatar-ring:hover { box-shadow: 0 0 0 3px rgba(45,125,111,0.25); }
       `}</style>
- 
+
       <nav className="nav-root sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-teal-100/60 w-full">
-        <div className="max-w-7xl mx-auto px-5 h-[60px] flex items-center justify-between">
- 
-          {/* ── LOGO ── */}
+        <div className="w-full px-5 h-[60px] flex items-center justify-between">
+
+          {/* LOGO */}
           <Link to="/dashboard" className="flex items-center shrink-0" style={{ textDecoration: 'none' }}>
             <img
               src="/logo.png"
@@ -119,11 +119,11 @@ const Navbar = () => {
               style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
             />
           </Link>
- 
+
           {user && (
             <div className="flex items-center gap-0.5">
- 
-              {/* ── NAV LINKS ── */}
+
+              {/* NAV LINKS */}
               {navLinks.map(({ to, icon: Icon, label, badge }) => {
                 const isReports = to === '/reports';
                 const active = isActive(to);
@@ -133,7 +133,7 @@ const Navbar = () => {
                 } else {
                   className += active ? 'active' : 'inactive';
                 }
- 
+
                 return (
                   <Link key={to} to={to} className={className}>
                     <Icon size={14} />
@@ -146,8 +146,8 @@ const Navbar = () => {
                   </Link>
                 );
               })}
- 
-              {/* ── ADMIN ── */}
+
+              {/* ADMIN */}
               {user.role === 'admin' && (
                 <Link
                   to="/admin"
@@ -157,14 +157,12 @@ const Navbar = () => {
                   <span className="hidden md:inline">Admin</span>
                 </Link>
               )}
- 
-              {/* ── DIVIDER ── */}
+
+              {/* DIVIDER */}
               <div className="w-px h-5 bg-teal-100 mx-2 shrink-0" />
- 
-              {/* ── RIGHT SECTION ── */}
+
+              {/* RIGHT SECTION */}
               <div className="flex items-center gap-1">
- 
-                {/* Avatar */}
                 <Link to="/profile" style={{ textDecoration: 'none' }}>
                   <div
                     className="avatar-ring w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold cursor-pointer"
@@ -182,13 +180,11 @@ const Navbar = () => {
                     )}
                   </div>
                 </Link>
- 
-                {/* Settings */}
+
                 <Link to="/settings" className="icon-btn" title="Settings">
                   <Settings size={16} />
                 </Link>
- 
-                {/* Logout */}
+
                 <button
                   className="icon-btn danger"
                   onClick={() => { logout(); navigate('/login'); }}
@@ -204,5 +200,5 @@ const Navbar = () => {
     </>
   );
 };
- 
+
 export default Navbar;

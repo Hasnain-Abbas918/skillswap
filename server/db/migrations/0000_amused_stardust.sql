@@ -6,6 +6,7 @@ CREATE TYPE "public"."session_status" AS ENUM('scheduled', 'in_progress', 'compl
 CREATE TYPE "public"."notification_type" AS ENUM('request', 'exchange', 'session', 'message', 'report', 'system');--> statement-breakpoint
 CREATE TYPE "public"."report_type" AS ENUM('no_show', 'misconduct', 'technical');--> statement-breakpoint
 CREATE TYPE "public"."report_status" AS ENUM('pending', 'reviewed', 'resolved', 'dismissed');--> statement-breakpoint
+CREATE TYPE "public"."review_type" AS ENUM('session', 'exchange');--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -48,7 +49,7 @@ CREATE TABLE "bids" (
 	"description" text NOT NULL,
 	"level" "skill_level" DEFAULT 'Beginner',
 	"is_active" boolean DEFAULT true,
-	"tags" text[] DEFAULT '{}',
+	"tags" text[] DEFAULT '{}'::text[],
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now()
 );
@@ -70,11 +71,24 @@ CREATE TABLE "exchanges" (
 	"user_b_id" uuid NOT NULL,
 	"bid_id" uuid,
 	"request_id" uuid,
-	"status" "exchange_status" DEFAULT 'pending',
+	"status" "exchange_status" DEFAULT 'active',
+	"total_sessions" integer DEFAULT 0,
+	"completed_sessions" integer DEFAULT 0,
+	"extra_sessions_a" integer DEFAULT 0,
+	"extra_sessions_b" integer DEFAULT 0,
+	"extra_requested_by" uuid,
+	"extra_requested_count" integer DEFAULT 0,
+	"skill_a_status" "skill_status" DEFAULT 'pending',
+	"skill_b_status" "skill_status" DEFAULT 'pending',
 	"pause_reason" text,
 	"pause_requested_by_id" uuid,
-	"pause_confirmed_by_id" uuid,
+	"pause_approved_by_id" uuid,
+	"paused_at" timestamp,
+	"resumed_at" timestamp,
 	"cancel_reason" text,
+	"cancel_requested_by_id" uuid,
+	"cancel_approved_by_id" uuid,
+	"cancelled_at" timestamp,
 	"completed_at" timestamp,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now()
@@ -156,6 +170,27 @@ CREATE TABLE "streaks" (
 	CONSTRAINT "streaks_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
+CREATE TABLE "reviews" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reviewer_id" uuid NOT NULL,
+	"reviewee_id" uuid NOT NULL,
+	"exchange_id" uuid,
+	"session_id" uuid,
+	"type" "review_type" DEFAULT 'session',
+	"rating" integer NOT NULL,
+	"comment" text,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "admin_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"admin_id" uuid NOT NULL,
+	"target_user_id" uuid,
+	"action" text NOT NULL,
+	"details" jsonb,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
@@ -174,8 +209,11 @@ ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_user_a_id_users_id_fk" FOREIGN
 ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_user_b_id_users_id_fk" FOREIGN KEY ("user_b_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_bid_id_bids_id_fk" FOREIGN KEY ("bid_id") REFERENCES "public"."bids"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_request_id_requests_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."requests"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_extra_requested_by_users_id_fk" FOREIGN KEY ("extra_requested_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_pause_requested_by_id_users_id_fk" FOREIGN KEY ("pause_requested_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_pause_confirmed_by_id_users_id_fk" FOREIGN KEY ("pause_confirmed_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_pause_approved_by_id_users_id_fk" FOREIGN KEY ("pause_approved_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_cancel_requested_by_id_users_id_fk" FOREIGN KEY ("cancel_requested_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "exchanges" ADD CONSTRAINT "exchanges_cancel_approved_by_id_users_id_fk" FOREIGN KEY ("cancel_approved_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_exchange_id_exchanges_id_fk" FOREIGN KEY ("exchange_id") REFERENCES "public"."exchanges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_teacher_id_users_id_fk" FOREIGN KEY ("teacher_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_student_id_users_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -189,4 +227,10 @@ ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_id_users_id_fk" FOREIGN K
 ALTER TABLE "reports" ADD CONSTRAINT "reports_reported_id_users_id_fk" FOREIGN KEY ("reported_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reports" ADD CONSTRAINT "reports_exchange_id_exchanges_id_fk" FOREIGN KEY ("exchange_id") REFERENCES "public"."exchanges"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "streaks" ADD CONSTRAINT "streaks_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_reviewer_id_users_id_fk" FOREIGN KEY ("reviewer_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_reviewee_id_users_id_fk" FOREIGN KEY ("reviewee_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_exchange_id_exchanges_id_fk" FOREIGN KEY ("exchange_id") REFERENCES "public"."exchanges"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin_logs" ADD CONSTRAINT "admin_logs_admin_id_users_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin_logs" ADD CONSTRAINT "admin_logs_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;

@@ -1,165 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBids, createBid } from '../store/slices/bidSlice';
 import { Search, Plus, X, ArrowLeftRight } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
- 
-const levelColors = {
-  Beginner:     'bg-green-100 text-green-700',
-  Intermediate: 'bg-amber-100 text-amber-700',
-  Advanced:     'bg-red-100 text-red-700',
-};
- 
-const BidCard = ({ bid, onRequest }) => {
-  const navigate = useNavigate();
- 
-  return (
-    <div
-      style={{
-        background: '#fff',
-        borderRadius: '1.5rem',
-        border: '1px solid #e0f0ee',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'all 0.3s ease',
-        fontFamily: "'DM Sans', sans-serif",
-        boxShadow: '0 2px 12px rgba(45,125,111,0.06)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-6px)';
-        e.currentTarget.style.boxShadow = '0 20px 60px rgba(45,125,111,0.12)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 12px rgba(45,125,111,0.06)';
-      }}
-    >
-      {/* ── FB Style: Avatar + Name + Level ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
- 
-        {/* ✅ Avatar — real photo ya letter */}
-        <div style={{
-          width: '46px',
-          height: '46px',
-          borderRadius: '12px',
-          flexShrink: 0,
-          overflow: 'hidden',
-          background: '#2d7d6f',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px solid #e0f0ee',
-        }}>
-          {bid.creator?.avatar ? (
-            <img
-              src={bid.creator.avatar}
-              alt={bid.creator?.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
-              {bid.creator?.name?.[0]?.toUpperCase() || '?'}
-            </span>
-          )}
-        </div>
- 
-        {/* Name + Level */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 700, color: '#0f2724', fontSize: '0.9rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {bid.creator?.name}
-          </p>
-          <span
-            style={{
-              fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px',
-              borderRadius: '100px', display: 'inline-block',
-            }}
-            className={levelColors[bid.level]}
-          >
-            {bid.level}
-          </span>
-        </div>
- 
-        {/* Time ago */}
-        <p style={{ fontSize: '0.72rem', color: '#9ab8b5', flexShrink: 0 }}>
-          {(() => {
-            const diff = Math.floor((Date.now() - new Date(bid.createdAt)) / 60000);
-            if (diff < 1) return 'just now';
-            if (diff < 60) return `${diff}m ago`;
-            if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
-            return `${Math.floor(diff / 1440)}d ago`;
-          })()}
-        </p>
-      </div>
- 
-      {/* ── Skills Exchange ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        <span style={{ background: '#e0f0ee', color: '#2d7d6f', fontSize: '0.78rem', fontWeight: 600, padding: '4px 10px', borderRadius: '8px' }}>
-          📤 {bid.skillOffered}
-        </span>
-        <ArrowLeftRight size={13} color="#4a6b67" />
-        <span style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '0.78rem', fontWeight: 600, padding: '4px 10px', borderRadius: '8px' }}>
-          📥 {bid.skillWanted}
-        </span>
-      </div>
- 
-      {/* ── Description ── */}
-      <p style={{
-        color: '#4a6b67', fontSize: '0.85rem', lineHeight: 1.6,
-        flex: 1, marginBottom: '12px',
-        display: '-webkit-box', WebkitLineClamp: 3,
-        WebkitBoxOrient: 'vertical', overflow: 'hidden',
-      }}>
-        {bid.description}
-      </p>
- 
-      {/* ── Tags ── */}
-      {bid.tags?.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-          {bid.tags.slice(0, 3).map((tag) => (
-            <span key={tag} style={{ fontSize: '0.7rem', background: '#f0f7f6', color: '#4a6b67', padding: '3px 8px', borderRadius: '100px' }}>
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
- 
-      {/* ── Buttons ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button
-          onClick={() => onRequest(bid)}
-          style={{
-            background: '#2d7d6f', color: '#fff', border: 'none',
-            borderRadius: '12px', padding: '10px', fontWeight: 700,
-            fontSize: '0.875rem', cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#1a5c51'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#2d7d6f'}
-        >
-          Send Request
-        </button>
-        <button
-          onClick={() => navigate(`/bids/${bid.id}`)}
-          style={{
-            background: '#f0f7f6', color: '#2d7d6f', border: '1px solid #e0f0ee',
-            borderRadius: '12px', padding: '10px', fontWeight: 600,
-            fontSize: '0.875rem', cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#e0f0ee'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#f0f7f6'}
-        >
-          More Details
-        </button>
-      </div>
-    </div>
-  );
-};
- 
+import BidCard from '../components/bids/BidCard';
+
 const BidsPage = () => {
   const dispatch = useDispatch();
   const { bids, total, loading } = useSelector((state) => state.bids);
@@ -169,12 +16,14 @@ const BidsPage = () => {
   const [form, setForm] = useState({ skillOffered: '', skillWanted: '', description: '', level: 'Beginner', tags: '' });
   const [requestTarget, setRequestTarget] = useState(null);
   const [requestMsg, setRequestMsg] = useState('');
+  const [estimateDays, setEstimateDays] = useState('');
+  const [dailyHours, setDailyHours] = useState('1');
   const [submitting, setSubmitting] = useState(false);
- 
+
   useEffect(() => {
     dispatch(fetchBids({ search, level: levelFilter }));
   }, [search, levelFilter, dispatch]);
- 
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -191,25 +40,33 @@ const BidsPage = () => {
       toast.error(result.payload || 'Failed to create bid');
     }
   };
- 
+
   const handleSendRequest = async () => {
     if (!requestTarget) return;
+    if (!estimateDays || estimateDays < 1) {
+      toast.error('Please enter how many days you need to learn');
+      return;
+    }
     setSubmitting(true);
     try {
       await api.post('/requests', {
         bidId: requestTarget.id,
         receiverId: requestTarget.creator?.id,
         message: requestMsg,
+        estimateDays: parseInt(estimateDays),
+        dailyHours: parseInt(dailyHours),
       });
       toast.success('Request sent!');
       setRequestTarget(null);
       setRequestMsg('');
+      setEstimateDays('');
+      setDailyHours('1');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send request');
     }
     setSubmitting(false);
   };
- 
+
   const inputStyle = {
     width: '100%', padding: '10px 14px', borderRadius: '12px',
     border: '1.5px solid #e0f0ee', background: '#f8fcfb',
@@ -217,24 +74,24 @@ const BidsPage = () => {
     fontFamily: "'DM Sans', sans-serif", transition: 'border 0.2s',
     boxSizing: 'border-box',
   };
- 
+
   const modalStyle = {
     background: '#fff', borderRadius: '2rem', padding: '32px',
     width: '100%', maxWidth: '460px',
     boxShadow: '0 24px 64px rgba(45,125,111,0.15)',
     border: '1px solid #e0f0ee', fontFamily: "'DM Sans', sans-serif",
   };
- 
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
         .bids-input:focus { border-color: #2d7d6f !important; box-shadow: 0 0 0 3px rgba(45,125,111,0.1); }
       `}</style>
- 
+
       <div style={{ minHeight: '100vh', padding: '32px 24px', fontFamily: "'DM Sans', sans-serif" }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
- 
+
           {/* ── Header ── */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
             <div>
@@ -259,7 +116,7 @@ const BidsPage = () => {
               <Plus size={18} /> Post a Bid
             </button>
           </div>
- 
+
           {/* ── Search & Filter ── */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '28px', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
@@ -285,7 +142,7 @@ const BidsPage = () => {
               <option>Advanced</option>
             </select>
           </div>
- 
+
           {/* ── Bids Grid ── */}
           {loading ? (
             <Loader text="Loading bids..." />
@@ -308,7 +165,7 @@ const BidsPage = () => {
           )}
         </div>
       </div>
- 
+
       {/* ── Create Bid Modal ── */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,39,36,0.5)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
@@ -317,66 +174,25 @@ const BidsPage = () => {
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.4rem', fontWeight: 800, color: '#0f2724' }}>
                 Post a Bid
               </h2>
-              <button
-                onClick={() => setShowCreate(false)}
-                style={{ background: '#f0f7f6', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: '#4a6b67' }}
-              >
+              <button onClick={() => setShowCreate(false)} style={{ background: '#f0f7f6', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: '#4a6b67' }}>
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <input
-                className="bids-input" style={inputStyle}
-                type="text" placeholder="Skill you offer (e.g. JavaScript)"
-                value={form.skillOffered}
-                onChange={(e) => setForm({ ...form, skillOffered: e.target.value })}
-                required
-              />
-              <input
-                className="bids-input" style={inputStyle}
-                type="text" placeholder="Skill you want (e.g. Guitar)"
-                value={form.skillWanted}
-                onChange={(e) => setForm({ ...form, skillWanted: e.target.value })}
-                required
-              />
-              <textarea
-                className="bids-input" style={{ ...inputStyle, resize: 'none' }}
-                placeholder="Describe the exchange..."
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                rows={3}
-                required
-              />
+              <input className="bids-input" style={inputStyle} type="text" placeholder="Skill you offer (e.g. JavaScript)" value={form.skillOffered} onChange={(e) => setForm({ ...form, skillOffered: e.target.value })} required />
+              <input className="bids-input" style={inputStyle} type="text" placeholder="Skill you want (e.g. Guitar)" value={form.skillWanted} onChange={(e) => setForm({ ...form, skillWanted: e.target.value })} required />
+              <textarea className="bids-input" style={{ ...inputStyle, resize: 'none' }} placeholder="Describe the exchange..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} required />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <select
-                  className="bids-input" style={inputStyle}
-                  value={form.level}
-                  onChange={(e) => setForm({ ...form, level: e.target.value })}
-                >
+                <select className="bids-input" style={inputStyle} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
                   <option>Beginner</option>
                   <option>Intermediate</option>
                   <option>Advanced</option>
                 </select>
-                <input
-                  className="bids-input" style={inputStyle}
-                  type="text" placeholder="Tags (comma-separated)"
-                  value={form.tags}
-                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                />
+                <input className="bids-input" style={inputStyle} type="text" placeholder="Tags (comma-separated)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
               </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(false)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e0f0ee', background: '#f0f7f6', color: '#2d7d6f', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2d7d6f', color: '#fff', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}
-                >
+                <button type="button" onClick={() => setShowCreate(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e0f0ee', background: '#f0f7f6', color: '#2d7d6f', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2d7d6f', color: '#fff', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}>
                   {submitting ? 'Posting...' : 'Post Bid'}
                 </button>
               </div>
@@ -384,52 +200,91 @@ const BidsPage = () => {
           </div>
         </div>
       )}
- 
+
       {/* ── Send Request Modal ── */}
       {requestTarget && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,39,36,0.5)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
-          <div style={modalStyle}>
+          <div style={{ ...modalStyle, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.4rem', fontWeight: 800, color: '#0f2724' }}>
                 Send Exchange Request
               </h2>
-              <button
-                onClick={() => setRequestTarget(null)}
-                style={{ background: '#f0f7f6', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: '#4a6b67' }}
-              >
+              <button onClick={() => setRequestTarget(null)} style={{ background: '#f0f7f6', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: '#4a6b67' }}>
                 <X size={18} />
               </button>
             </div>
- 
-            {/* Request target info */}
+
+            {/* Target info */}
             <div style={{ background: '#f0f7f6', borderRadius: '14px', padding: '14px', marginBottom: '16px' }}>
-              {/* ✅ FB style — avatar + name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', background: '#2d7d6f', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {requestTarget.creator?.avatar ? (
                     <img src={requestTarget.creator.avatar} alt={requestTarget.creator.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>
-                      {requestTarget.creator?.name?.[0]?.toUpperCase()}
-                    </span>
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>{requestTarget.creator?.name?.[0]?.toUpperCase()}</span>
                   )}
                 </div>
                 <p style={{ fontSize: '0.875rem', color: '#4a6b67' }}>
-                  Requesting exchange with <strong style={{ color: '#0f2724' }}>{requestTarget.creator?.name}</strong>
+                  Exchange with <strong style={{ color: '#0f2724' }}>{requestTarget.creator?.name}</strong>
                 </p>
               </div>
- 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: '#e0f0ee', color: '#2d7d6f', fontSize: '0.78rem', fontWeight: 600, padding: '3px 10px', borderRadius: '8px' }}>
-                  {requestTarget.skillOffered}
-                </span>
+                <span style={{ background: '#e0f0ee', color: '#2d7d6f', fontSize: '0.78rem', fontWeight: 600, padding: '3px 10px', borderRadius: '8px' }}>{requestTarget.skillOffered}</span>
                 <ArrowLeftRight size={12} color="#4a6b67" />
-                <span style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '0.78rem', fontWeight: 600, padding: '3px 10px', borderRadius: '8px' }}>
-                  {requestTarget.skillWanted}
-                </span>
+                <span style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '0.78rem', fontWeight: 600, padding: '3px 10px', borderRadius: '8px' }}>{requestTarget.skillWanted}</span>
               </div>
             </div>
- 
+
+            {/* ── Estimate Section ── */}
+            <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#92400e', marginBottom: '12px' }}>
+                📊 Session Planning
+              </p>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#0f2724', marginBottom: '6px' }}>
+                  Aap ko <strong>{requestTarget.skillWanted}</strong> seekhne mein kitne din lagenge?
+                </label>
+                <input
+                  className="bids-input"
+                  type="number"
+                  min="1"
+                  max="365"
+                  placeholder="e.g. 14"
+                  value={estimateDays}
+                  onChange={(e) => setEstimateDays(e.target.value)}
+                  style={{ ...inputStyle, background: '#fff' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#0f2724', marginBottom: '6px' }}>
+                  Roz kitne ghante session de sakte ho?
+                </label>
+                <select
+                  className="bids-input"
+                  value={dailyHours}
+                  onChange={(e) => setDailyHours(e.target.value)}
+                  style={{ ...inputStyle, background: '#fff' }}
+                >
+                  <option value="1">1 hour / day</option>
+                  <option value="2">2 hours / day</option>
+                  <option value="3">3 hours / day</option>
+                </select>
+              </div>
+
+              {estimateDays && (
+                <div style={{ marginTop: '12px', background: '#d1fae5', borderRadius: '10px', padding: '10px', fontSize: '0.8rem', color: '#065f46', fontWeight: 600 }}>
+                  📅 Estimated: ~{parseInt(estimateDays)} days × {dailyHours} hr/day
+                  <br />
+                  <span style={{ fontWeight: 400, fontSize: '0.75rem' }}>
+                    Final sessions will be calculated after receiver also gives their estimate
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Message */}
             <textarea
               className="bids-input"
               style={{ ...inputStyle, resize: 'none', marginBottom: '16px' }}
@@ -438,10 +293,10 @@ const BidsPage = () => {
               onChange={(e) => setRequestMsg(e.target.value)}
               rows={3}
             />
- 
+
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
-                onClick={() => setRequestTarget(null)}
+                onClick={() => { setRequestTarget(null); setEstimateDays(''); setDailyHours('1'); }}
                 style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e0f0ee', background: '#f0f7f6', color: '#2d7d6f', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Cancel
@@ -460,5 +315,5 @@ const BidsPage = () => {
     </>
   );
 };
- 
+
 export default BidsPage;
